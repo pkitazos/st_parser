@@ -33,6 +33,5 @@ defmodule ST do
     defstruct []
   end
 
-  # Type definition for convenience (requires Elixir >= 1.14)
   # @type t :: SIn.t() | SOut.t() | SEnd.t()
 end

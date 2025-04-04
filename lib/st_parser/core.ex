@@ -1,4 +1,4 @@
-defmodule ST.Parser do
+defmodule ST.Parser.Core do
   import NimbleParsec
 
   # Identifiers

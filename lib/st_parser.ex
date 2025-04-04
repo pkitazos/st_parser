@@ -1,4 +1,4 @@
-defmodule ST.API do
+defmodule ST.Parser do
   @moduledoc """
   User-friendly API for the Session Type Parser.
 
@@ -14,7 +14,7 @@ defmodule ST.API do
 
   ## Examples
 
-      iex> ST.API.parse("&Server:{ Ack(unit).end }")
+      iex> ST.Parser.parse("&Server:{ Ack(unit).end }")
       {:ok, %ST.SIn{
         from: :server,
         branches: [
@@ -26,7 +26,7 @@ defmodule ST.API do
         ]
       }}
 
-      iex> ST.API.parse("+Client:{ Request(string).end }")
+      iex> ST.Parser.parse("+Client:{ Request(string).end }")
       {:ok, %ST.SOut{
         to: :client,
         branches: [
@@ -38,11 +38,11 @@ defmodule ST.API do
         ]
       }}
 
-      iex> ST.API.parse("end")
+      iex> ST.Parser.parse("end")
       {:ok, %ST.SEnd{}}
   """
   def parse(input) when is_binary(input) do
-    case ST.Parser.parse_session_type(input) do
+    case ST.Parser.Core.parse_session_type(input) do
       {:ok, [result], "", _, _, _} ->
         {:ok, result}
 
@@ -61,10 +61,10 @@ defmodule ST.API do
 
   ## Examples
 
-      iex> ST.API.parse!("end")
+      iex> ST.Parser.parse!("end")
       %ST.SEnd{}
 
-      iex> ST.API.parse!("invalid")
+      iex> ST.Parser.parse!("invalid")
       ** (RuntimeError) Parser error: ...
   """
   def parse!(input) when is_binary(input) do
@@ -81,17 +81,17 @@ defmodule ST.API do
 
   ## Examples
 
-      iex> ST.API.parse_type("string")
+      iex> ST.Parser.parse_type("string")
       {:ok, :binary}
 
-      iex> ST.API.parse_type("boolean[]")
+      iex> ST.Parser.parse_type("boolean[]")
       {:ok, {:list, [:boolean]}}
 
-      iex> ST.API.parse_type("(string, number)")
+      iex> ST.Parser.parse_type("(string, number)")
       {:ok, {:tuple, [:binary, :number]}}
   """
   def parse_type(input) when is_binary(input) do
-    case ST.Parser.payload_type(input) do
+    case ST.Parser.Core.payload_type(input) do
       {:ok, [result], "", _, _, _} ->
         {:ok, result}
 
@@ -110,10 +110,10 @@ defmodule ST.API do
 
   ## Examples
 
-      iex> ST.API.parse_type!("string")
+      iex> ST.Parser.parse_type!("string")
       :binary
 
-      iex> ST.API.parse_type!("invalid_type")
+      iex> ST.Parser.parse_type!("invalid_type")
       ** (RuntimeError) Type parser error: ...
   """
   def parse_type!(input) when is_binary(input) do
