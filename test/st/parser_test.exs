@@ -237,8 +237,8 @@ defmodule ST.ParserTest do
   end
 
   describe "ST.Parser.parse with named handlers" do
-    test "parses named handler references" do
-      assert {:ok, %ST.SName{handler: :quote_handler}} = ST.Parser.parse("quote_handler")
+    test "returns error for non-continuation handler reference" do
+      assert {:error, _} = ST.Parser.parse("quote_handler")
     end
 
     test "parses session types with named handler continuations" do

@@ -62,13 +62,20 @@ defmodule ST.Parser.Core do
     string("end")
     |> replace(%ST.SEnd{})
 
-  # First define all the private parsers we'll need
   defcombinatorp(
     :payload_type_inner,
     choice([
       parsec(:tuple_inner),
       list_type,
       basic_payload_type
+    ])
+  )
+
+  defcombinatorp(
+    :continuation,
+    choice([
+      parsec(:session_type),
+      name_type
     ])
   )
 
@@ -87,7 +94,6 @@ defmodule ST.Parser.Core do
     |> post_traverse({__MODULE__, :wrap_tuple_type, []})
   )
 
-  # Define a branch parser without using the continuation parser yet
   defcombinatorp(
     :branch_without_cont,
     # Label
@@ -145,26 +151,22 @@ defmodule ST.Parser.Core do
     |> post_traverse({__MODULE__, :wrap_output, []})
   )
 
-  # Define session type which includes end, input and output
   defcombinatorp(
     :session_type_inner,
     choice([
       end_type,
       parsec(:input),
-      parsec(:output),
-      name_type
+      parsec(:output)
     ])
   )
 
-  # Now define the full branch with continuation
   defcombinatorp(
     :branch,
     parsec(:branch_without_cont)
-    |> concat(parsec(:session_type))
+    |> concat(parsec(:continuation))
     |> post_traverse({__MODULE__, :wrap_branch, []})
   )
 
-  # Define the exported parsers
   defparsecp(:branch_list, parsec(:branch_list_inner))
   defparsecp(:input, parsec(:input_inner))
   defparsecp(:output, parsec(:output_inner))
