@@ -23,4 +23,6 @@ st_parser-*.tar
 /tmp/
 
 # Ignore the generated files from the ElixirLS extension
+.elixir_ls/
+
 .vscode/
