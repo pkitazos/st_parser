@@ -66,4 +66,107 @@ defmodule ST.ParserTest do
       assert {:ok, [%ST.SEnd{}], "", _, _, _} = ST.Parser.parse_end("end")
     end
   end
+
+  describe "branch parser" do
+    test "parses a simple branch with end continuation" do
+      assert {:ok,
+              [
+                %ST.SBranch{
+                  label: :request,
+                  payload: :binary,
+                  continue_as: %ST.SEnd{}
+                }
+              ], "", _, _, _} = ST.Parser.parse_branch("Request(string).end")
+    end
+  end
+
+  describe "input type parser" do
+    test "parses an input with a single branch" do
+      assert {:ok,
+              [
+                %ST.SIn{
+                  from: :server,
+                  branches: [
+                    %ST.SBranch{
+                      label: :ack,
+                      payload: :unit,
+                      continue_as: %ST.SEnd{}
+                    }
+                  ]
+                }
+              ], "", _, _, _} = ST.Parser.parse_input("&Server:{ Ack(unit).end }")
+    end
+
+    test "parses an input with multiple branches" do
+      assert {:ok,
+              [
+                %ST.SIn{
+                  from: :server,
+                  branches: [
+                    %ST.SBranch{
+                      label: :error,
+                      payload: :binary,
+                      continue_as: %ST.SEnd{}
+                    },
+                    %ST.SBranch{
+                      label: :ack,
+                      payload: :unit,
+                      continue_as: %ST.SEnd{}
+                    }
+                  ]
+                }
+              ], "", _, _,
+              _} = ST.Parser.parse_input("&Server:{ Ack(unit).end, Error(string).end }")
+    end
+  end
+
+  describe "output type parser" do
+    test "parses an output with a single branch" do
+      assert {:ok,
+              [
+                %ST.SOut{
+                  to: :client,
+                  branches: [
+                    %ST.SBranch{
+                      label: :request,
+                      payload: :binary,
+                      continue_as: %ST.SEnd{}
+                    }
+                  ]
+                }
+              ], "", _, _, _} = ST.Parser.parse_output("+Client:{ Request(string).end }")
+    end
+
+    test "parses an output with complex payload" do
+      assert {:ok,
+              [
+                %ST.SOut{
+                  to: :peer,
+                  branches: [
+                    %ST.SBranch{
+                      label: :data,
+                      payload: {:tuple, [:binary, {:list, [:boolean]}]},
+                      continue_as: %ST.SEnd{}
+                    }
+                  ]
+                }
+              ], "", _, _, _} = ST.Parser.parse_output("+Peer:{ Data((string, boolean[])).end }")
+    end
+  end
+
+  describe "session type parser" do
+    test "parses end type" do
+      assert {:ok, [%ST.SEnd{}], "", _, _, _} = ST.Parser.parse_session_type("end")
+    end
+
+    test "parses input type" do
+      assert {:ok, [%ST.SIn{}], _, _, _, _} =
+               ST.Parser.parse_session_type("&Server:{ Ack(unit).end }")
+    end
+
+    test "parses output type" do
+      assert {:ok, [%ST.SOut{}], _, _, _, _} =
+               ST.Parser.parse_session_type("+Client:{ Request(string).end }")
+    end
+  end
 end
