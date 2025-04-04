@@ -13,6 +13,7 @@ defmodule ST.Parser do
   - Input (external choice): `&Role:{ Label1(PayloadType).Continuation, Label2(PayloadType).Continuation }`
   - Output (internal choice): `+Role:{ Label1(PayloadType).Continuation, Label2(PayloadType).Continuation }`
   - End (termination): `end`
+  - Named handler reference: `handler_name`
 
   ### Payload Types
 
@@ -25,9 +26,9 @@ defmodule ST.Parser do
 
   ```
   &Server:{
-    GetData(string).+Server:{
-      Data((string, number[])).end
-    }
+  GetData(string).+Server:{
+    Data((string, number[])).end
+  }
   }
   ```
 
@@ -35,6 +36,16 @@ defmodule ST.Parser do
   1. The user sends a `GetData` message with a string payload to the server
   2. The server responds with a `Data` message containing a tuple of a string and a number array
   3. The session then terminates
+
+  Or with named handlers:
+
+  ```
+  &Server:{
+    GetData(string).+Server:{
+      Data((string, number[])).handle_data
+    }
+  }
+  ```
   """
 
   @typedoc """

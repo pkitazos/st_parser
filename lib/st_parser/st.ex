@@ -92,13 +92,33 @@ defmodule ST do
     @type t :: %__MODULE__{}
   end
 
+  defmodule SName do
+    @moduledoc """
+    Represents a named handler reference in a session type.
+
+    This session type indicates that the current role will delegate
+    processing to a specific named handler function.
+    """
+    @enforce_keys [:handler]
+    defstruct [:handler]
+
+    @typedoc """
+    A named handler reference containing:
+    - handler: The name of the handler function as an atom
+    """
+    @type t :: %__MODULE__{
+            handler: atom()
+          }
+  end
+
   @typedoc """
   A session type that can be:
   - An input type (receiving messages)
   - An output type (sending messages)
   - A termination marker
+  - A named handler reference
   """
-  @type t :: SIn.t() | SOut.t() | SEnd.t()
+  @type t :: SIn.t() | SOut.t() | SEnd.t() | SName.t()
 
   @typedoc """
   A payload type that can be:
@@ -247,5 +267,24 @@ defmodule ST do
   @spec end_session() :: SEnd.t()
   def end_session do
     %SEnd{}
+  end
+
+  @doc """
+  Creates a named handler reference.
+
+  ## Parameters
+  - `handler`: The handler function name (atom)
+
+  ## Example
+      iex> ST.name(:quote_handler)
+      %ST.SName{
+        handler: :quote_handler
+      }
+  """
+  @spec name(atom()) :: SName.t()
+  def name(handler) do
+    %SName{
+      handler: handler
+    }
   end
 end

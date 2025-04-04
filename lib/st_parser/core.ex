@@ -24,6 +24,7 @@ defmodule ST.Parser.Core do
     |> map({String, :to_atom, []})
 
   # Basic types with their Elixir representations
+  binary_type = string("binary") |> replace(:binary)
   string_type = string("string") |> replace(:binary)
   number_type = string("number") |> replace(:number)
   unit_type = string("unit") |> replace(:unit)
@@ -32,6 +33,7 @@ defmodule ST.Parser.Core do
   # Basic payload type - matches one of the basic types
   basic_payload_type =
     choice([
+      binary_type,
       string_type,
       number_type,
       unit_type,
@@ -49,6 +51,11 @@ defmodule ST.Parser.Core do
     ascii_char([?\s, ?\t, ?\n, ?\r])
     |> repeat()
     |> ignore()
+
+  # Name terminal - matches identifiers as handler names
+  name_type =
+    identifier
+    |> post_traverse({__MODULE__, :wrap_name, []})
 
   # End terminal
   end_type =
@@ -144,7 +151,8 @@ defmodule ST.Parser.Core do
     choice([
       end_type,
       parsec(:input),
-      parsec(:output)
+      parsec(:output),
+      name_type
     ])
   )
 
@@ -256,6 +264,21 @@ defmodule ST.Parser.Core do
     {rest, [output], context}
   end
 
+  @doc """
+  Helper function for parser post-processing to wrap name structures.
+
+  ## Parameters
+  Standard NimbleParsec post-traverse callback parameters.
+
+  ## Returns
+  A tuple containing the rest of the input, a list with the
+  name structure, and the context.
+  """
+  def wrap_name(rest, [handler], context, _line, _offset) do
+    name = %ST.SName{handler: handler}
+    {rest, [name], context}
+  end
+
   # Export the parsers with documentation
 
   @doc """
@@ -301,6 +324,17 @@ defmodule ST.Parser.Core do
   - A NimbleParsec result tuple
   """
   defparsec(:parse_output, parsec(:output))
+
+  @doc """
+  Parses a named handler reference.
+
+  ## Parameters
+  - `input`: String containing the handler name
+
+  ## Returns
+  - A NimbleParsec result tuple
+  """
+  defparsec(:parse_name, name_type)
 
   @doc """
   Parses a payload type.

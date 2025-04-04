@@ -224,6 +224,7 @@ defmodule ST.ParserTest do
       # Invalid payload
       # Empty payload
       assert {:error, _} = ST.Parser.parse("+Client:{ Request().end }")
+
       # Invalid type
       assert {:error, _} = ST.Parser.parse("+Client:{ Request(invalid).end }")
 
@@ -232,6 +233,61 @@ defmodule ST.ParserTest do
       assert {:error, _} = ST.Parser.parse("+Client:{ Request(string),end }")
       # Missing dot
       assert {:error, _} = ST.Parser.parse("+Client:{ Request(string) end }")
+    end
+  end
+
+  describe "ST.Parser.parse with named handlers" do
+    test "parses named handler references" do
+      assert {:ok, %ST.SName{handler: :quote_handler}} = ST.Parser.parse("quote_handler")
+    end
+
+    test "parses session types with named handler continuations" do
+      protocol = """
+      &Buyer:{
+        Title(string).+Seller:{
+          Title(string).quote_handler
+        }
+      }
+      """
+
+      assert {:ok,
+              %ST.SIn{
+                from: :buyer,
+                branches: [
+                  %ST.SBranch{
+                    label: :title,
+                    payload: :binary,
+                    continue_as: %ST.SOut{
+                      to: :seller,
+                      branches: [
+                        %ST.SBranch{
+                          label: :title,
+                          payload: :binary,
+                          continue_as: %ST.SName{handler: :quote_handler}
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }} = ST.Parser.parse(protocol)
+    end
+
+    test "handles complex protocol with named handlers" do
+      # Test a protocol that includes both end and named handlers
+      protocol =
+        "+Client:{ Login(string).&Server:{ Success(unit).process_login, Error(string).end } }"
+
+      {:ok, parsed} = ST.Parser.parse(protocol)
+
+      # Verify the Success branch has a named handler
+      success_branch =
+        parsed.branches
+        |> hd
+        |> Map.get(:continue_as)
+        |> Map.get(:branches)
+        |> Enum.find(&(&1.label == :success))
+
+      assert %ST.SName{handler: :process_login} = success_branch.continue_as
     end
   end
 
@@ -578,6 +634,18 @@ defmodule ST.ParserTest do
     test "recognises nested tuples" do
       assert {:ok, [{:tuple, [:binary, {:tuple, [:number, :boolean]}]}], "", _, _, _} =
                ST.Parser.Core.parse_tuple("(string, (number, boolean))")
+    end
+  end
+
+  describe "Core.parse_name" do
+    test "parses handler names" do
+      assert {:ok, [%ST.SName{handler: :quote_handler}], "", _, _, _} =
+               ST.Parser.Core.parse_name("quote_handler")
+    end
+
+    test "parses compound handler names" do
+      assert {:ok, [%ST.SName{handler: :process_user_request}], "", _, _, _} =
+               ST.Parser.Core.parse_name("ProcessUserRequest")
     end
   end
 end
