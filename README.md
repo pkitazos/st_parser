@@ -28,7 +28,7 @@ Add `st_parser` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:st_parser, "~> 0.2.0"}
+    {:st_parser, "~> 0.3.0"}
   ]
 end
 ```
