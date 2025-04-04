@@ -75,12 +75,6 @@ defmodule ST.Parser.Core do
       |> concat(whitespace)
       |> concat(parsec(:payload_type_inner))
     )
-    |> repeat(
-      # a bit silly but it works
-      ignore(string(" ,"))
-      |> concat(whitespace)
-      |> concat(parsec(:payload_type_inner))
-    )
     |> concat(whitespace)
     |> ignore(string(")"))
     |> post_traverse({__MODULE__, :wrap_tuple_type, []})

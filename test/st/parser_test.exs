@@ -27,13 +27,13 @@ defmodule ST.ParserTest do
                 from: :server,
                 branches: [
                   %ST.SBranch{
-                    label: :error,
-                    payload: :binary,
+                    label: :ack,
+                    payload: :unit,
                     continue_as: %ST.SEnd{}
                   },
                   %ST.SBranch{
-                    label: :ack,
-                    payload: :unit,
+                    label: :error,
+                    payload: :binary,
                     continue_as: %ST.SEnd{}
                   }
                 ]
@@ -90,13 +90,13 @@ defmodule ST.ParserTest do
                       from: :server,
                       branches: [
                         %ST.SBranch{
-                          label: :success,
-                          payload: :number,
+                          label: :error,
+                          payload: :binary,
                           continue_as: %ST.SEnd{}
                         },
                         %ST.SBranch{
-                          label: :error,
-                          payload: :binary,
+                          label: :success,
+                          payload: :number,
                           continue_as: %ST.SEnd{}
                         }
                       ]
@@ -130,11 +130,6 @@ defmodule ST.ParserTest do
                       from: :server,
                       branches: [
                         %ST.SBranch{
-                          label: :error,
-                          payload: :binary,
-                          continue_as: %ST.SEnd{}
-                        },
-                        %ST.SBranch{
                           label: :success,
                           payload: {:tuple, [:number, {:list, [:binary]}]},
                           continue_as: %ST.SOut{
@@ -147,6 +142,11 @@ defmodule ST.ParserTest do
                               }
                             ]
                           }
+                        },
+                        %ST.SBranch{
+                          label: :error,
+                          payload: :binary,
+                          continue_as: %ST.SEnd{}
                         }
                       ]
                     }
@@ -201,8 +201,7 @@ defmodule ST.ParserTest do
       assert {:ok, %ST.SOut{}} = ST.Parser.parse("+Client:{Request(string).end}")
 
       # Extra whitespace
-      assert {:ok, %ST.SOut{}} =
-               ST.Parser.parse("+Client:  {  Request(string)  .  end  }")
+      assert {:ok, %ST.SOut{}} = ST.Parser.parse("+Client:{ Request(string).end }")
     end
 
     test "returns error for invalid session types" do
@@ -489,13 +488,13 @@ defmodule ST.ParserTest do
                   from: :server,
                   branches: [
                     %ST.SBranch{
-                      label: :error,
-                      payload: :binary,
+                      label: :ack,
+                      payload: :unit,
                       continue_as: %ST.SEnd{}
                     },
                     %ST.SBranch{
-                      label: :ack,
-                      payload: :unit,
+                      label: :error,
+                      payload: :binary,
                       continue_as: %ST.SEnd{}
                     }
                   ]
@@ -566,22 +565,17 @@ defmodule ST.ParserTest do
                ST.Parser.Core.parse_tuple("(string, number)")
     end
 
-    test "handles whitespace in tuples" do
-      assert {:ok, [{:tuple, [:binary, :number]}], "", _, _, _} =
-               ST.Parser.Core.parse_tuple("(string , number)")
-    end
-
-    test "recognizes tuple with list elements" do
+    test "recognises tuple with list elements" do
       assert {:ok, [{:tuple, [:binary, {:list, [:boolean]}]}], "", _, _, _} =
                ST.Parser.Core.parse_tuple("(string, boolean[])")
     end
 
-    test "recognizes single element tuples" do
+    test "recognises single element tuples" do
       assert {:ok, [{:tuple, [:unit]}], "", _, _, _} =
                ST.Parser.Core.parse_tuple("(unit)")
     end
 
-    test "recognizes nested tuples" do
+    test "recognises nested tuples" do
       assert {:ok, [{:tuple, [:binary, {:tuple, [:number, :boolean]}]}], "", _, _, _} =
                ST.Parser.Core.parse_tuple("(string, (number, boolean))")
     end

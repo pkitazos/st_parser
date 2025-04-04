@@ -101,7 +101,9 @@ defmodule ST.Parser do
   """
   @spec parse(String.t()) :: parse_result()
   def parse(input) when is_binary(input) do
-    case ST.Parser.Core.parse_session_type(input) do
+    normalised_input = String.replace(input, ~r/\s+/, "")
+
+    case ST.Parser.Core.parse_session_type(normalised_input) do
       {:ok, [result], "", _, _, _} ->
         {:ok, result}
 
@@ -161,7 +163,9 @@ defmodule ST.Parser do
   """
   @spec parse_type(String.t()) :: type_result()
   def parse_type(input) when is_binary(input) do
-    case ST.Parser.Core.payload_type(input) do
+    normalized_input = String.replace(input, ~r/\s+/, "")
+
+    case ST.Parser.Core.payload_type(normalized_input) do
       {:ok, [result], "", _, _, _} ->
         {:ok, result}
 
