@@ -14,22 +14,6 @@ defmodule ST do
   Each of these has convenience constructor functions available in this module.
   """
 
-  @typedoc """
-  A session type that can be:
-  - An input type (receiving messages)
-  - An output type (sending messages)
-  - A termination marker
-  """
-  @type t :: SIn.t() | SOut.t() | SEnd.t()
-
-  @typedoc """
-  A payload type that can be:
-  - A basic type (:binary, :number, :boolean, :unit)
-  - A list of a basic type
-  - A tuple containing multiple payload types
-  """
-  @type payload_type :: atom() | {:list, [atom()]} | {:tuple, [payload_type()]}
-
   defmodule SBranch do
     @moduledoc """
     Represents a single branch in a choice or a single action sequence.
@@ -107,6 +91,22 @@ defmodule ST do
     """
     @type t :: %__MODULE__{}
   end
+
+  @typedoc """
+  A session type that can be:
+  - An input type (receiving messages)
+  - An output type (sending messages)
+  - A termination marker
+  """
+  @type t :: SIn.t() | SOut.t() | SEnd.t()
+
+  @typedoc """
+  A payload type that can be:
+  - A basic type (:binary, :number, :boolean, :unit)
+  - A list of a basic type
+  - A tuple containing multiple payload types
+  """
+  @type payload_type :: atom() | {:list, [atom()]} | {:tuple, [payload_type()]}
 
   @doc """
   Creates a branch in a session type.
