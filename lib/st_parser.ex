@@ -5,12 +5,70 @@ defmodule ST.Parser do
   This module provides convenient functions for parsing session type expressions
   into their corresponding ST data structures. It serves as the main entry point
   for using the parser in application code.
+
+  ## Session Type Syntax
+
+  The syntax supported by this parser includes:
+
+  - Input (external choice): `&Role:{ Label1(PayloadType).Continuation, Label2(PayloadType).Continuation }`
+  - Output (internal choice): `+Role:{ Label1(PayloadType).Continuation, Label2(PayloadType).Continuation }`
+  - End (termination): `end`
+
+  ### Payload Types
+
+  The following payload types are supported:
+  - Basic types: `string`, `number`, `boolean`, `unit`
+  - List types: `type[]` (e.g., `string[]`, `number[]`)
+  - Tuple types: `(type1, type2, ...)` (e.g., `(string, number)`, `(boolean[], unit)`)
+
+  ### Example Session Type
+
+  ```
+  &Server:{
+    GetData(string).+Server:{
+      Data((string, number[])).end
+    }
+  }
+  ```
+
+  This session type describes a protocol where:
+  1. The user sends a `GetData` message with a string payload to the server
+  2. The server responds with a `Data` message containing a tuple of a string and a number array
+  3. The session then terminates
   """
+
+  @typedoc """
+  Result of a successful parse operation.
+  """
+  @type parse_success :: {:ok, ST.t()}
+
+  @typedoc """
+  Result of a failed parse operation containing an error message.
+  """
+  @type parse_error :: {:error, String.t()}
+
+  @typedoc """
+  Result of a parse operation, either success or failure.
+  """
+  @type parse_result :: parse_success() | parse_error()
+
+  @typedoc """
+  Result of a successful parse_type operation.
+  """
+  @type type_success :: {:ok, ST.payload_type()}
+
+  @typedoc """
+  Result of a parse_type operation, either success or failure.
+  """
+  @type type_result :: type_success() | parse_error()
 
   @doc """
   Parses a complete session type expression.
 
   Returns `{:ok, parsed_type}` on success or `{:error, reason}` on failure.
+
+  ## Parameters
+  - `input`: String containing the session type expression to parse
 
   ## Examples
 
@@ -41,6 +99,7 @@ defmodule ST.Parser do
       iex> ST.Parser.parse("end")
       {:ok, %ST.SEnd{}}
   """
+  @spec parse(String.t()) :: parse_result()
   def parse(input) when is_binary(input) do
     case ST.Parser.Core.parse_session_type(input) do
       {:ok, [result], "", _, _, _} ->
@@ -59,6 +118,9 @@ defmodule ST.Parser do
 
   Returns the parsed type directly on success.
 
+  ## Parameters
+  - `input`: String containing the session type expression to parse
+
   ## Examples
 
       iex> ST.Parser.parse!("end")
@@ -66,7 +128,11 @@ defmodule ST.Parser do
 
       iex> ST.Parser.parse!("invalid")
       ** (RuntimeError) Parser error: ...
+
+  ## Raises
+  - `RuntimeError`: When parsing fails for any reason
   """
+  @spec parse!(String.t()) :: ST.t() | no_return()
   def parse!(input) when is_binary(input) do
     case parse(input) do
       {:ok, result} -> result
@@ -79,6 +145,9 @@ defmodule ST.Parser do
 
   Returns `{:ok, parsed_type}` on success or `{:error, reason}` on failure.
 
+  ## Parameters
+  - `input`: String containing the payload type expression to parse
+
   ## Examples
 
       iex> ST.Parser.parse_type("string")
@@ -90,6 +159,7 @@ defmodule ST.Parser do
       iex> ST.Parser.parse_type("(string, number)")
       {:ok, {:tuple, [:binary, :number]}}
   """
+  @spec parse_type(String.t()) :: type_result()
   def parse_type(input) when is_binary(input) do
     case ST.Parser.Core.payload_type(input) do
       {:ok, [result], "", _, _, _} ->
@@ -108,6 +178,9 @@ defmodule ST.Parser do
 
   Returns the parsed type directly on success.
 
+  ## Parameters
+  - `input`: String containing the payload type expression to parse
+
   ## Examples
 
       iex> ST.Parser.parse_type!("string")
@@ -115,7 +188,11 @@ defmodule ST.Parser do
 
       iex> ST.Parser.parse_type!("invalid_type")
       ** (RuntimeError) Type parser error: ...
+
+  ## Raises
+  - `RuntimeError`: When parsing fails for any reason
   """
+  @spec parse_type!(String.t()) :: ST.payload_type() | no_return()
   def parse_type!(input) when is_binary(input) do
     case parse_type(input) do
       {:ok, result} -> result
