@@ -30,40 +30,40 @@ defmodule ST.Parser do
     |> ignore(string("[]"))
     |> map({__MODULE__, :wrap_list_type, []})
 
-  # Simple payload type (basic or list)
-  simple_payload_type =
-    choice([
-      list_type,
-      basic_payload_type
-    ])
-
   # Optional whitespace
-  optional_whitespace =
-    optional(ascii_char([?\s, ?\t, ?\n, ?\r]) |> repeat())
+  whitespace =
+    ascii_char([?\s, ?\t, ?\n, ?\r])
+    |> repeat()
     |> ignore()
 
-  # Tuple type implementation using defcombinatorp
+  optional_whitespace = optional(whitespace)
+
+  # Forward declare payload_type for recursion
+  defcombinatorp(:payload_type_recursive, parsec(:payload_type_inner))
+
+  # Tuple type implementation
   defcombinatorp(
     :tuple_inner,
-    string("(")
+    ignore(string("("))
     |> concat(optional_whitespace)
-    |> concat(parsec(:payload_type))
+    |> concat(parsec(:payload_type_recursive))
     |> repeat(
-      string(",")
+      ignore(string(","))
       |> concat(optional_whitespace)
-      |> concat(parsec(:payload_type))
+      |> concat(parsec(:payload_type_recursive))
     )
     |> concat(optional_whitespace)
-    |> string(")")
+    |> ignore(string(")"))
     |> post_traverse({__MODULE__, :wrap_tuple_type, []})
   )
 
-  # Recursive definition of payload_type
+  # Combined payload type (either tuple, list, or basic)
   defcombinatorp(
     :payload_type_inner,
     choice([
       parsec(:tuple_inner),
-      simple_payload_type
+      list_type,
+      basic_payload_type
     ])
   )
 
@@ -78,16 +78,8 @@ defmodule ST.Parser do
   end
 
   def wrap_tuple_type(rest, args, context, _line, _offset) do
-    # Extract the types from the args (excluding parentheses and commas)
-    types =
-      args
-      |> Enum.filter(fn
-        "(" -> false
-        ")" -> false
-        "," -> false
-        _ -> true
-      end)
-
+    # Fix the order of elements (they come in reverse)
+    types = Enum.reverse(args)
     {rest, [{:tuple, types}], context}
   end
 
