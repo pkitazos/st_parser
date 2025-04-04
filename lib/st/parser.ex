@@ -30,26 +30,71 @@ defmodule ST.Parser do
     |> ignore(string("[]"))
     |> map({__MODULE__, :wrap_list_type, []})
 
-  # Combined payload type (either basic or list)
-  payload_type =
+  # Simple payload type (basic or list)
+  simple_payload_type =
     choice([
       list_type,
       basic_payload_type
     ])
+
+  # Optional whitespace
+  optional_whitespace =
+    optional(ascii_char([?\s, ?\t, ?\n, ?\r]) |> repeat())
+    |> ignore()
+
+  # Tuple type implementation using defcombinatorp
+  defcombinatorp(
+    :tuple_inner,
+    string("(")
+    |> concat(optional_whitespace)
+    |> concat(parsec(:payload_type))
+    |> repeat(
+      string(",")
+      |> concat(optional_whitespace)
+      |> concat(parsec(:payload_type))
+    )
+    |> concat(optional_whitespace)
+    |> string(")")
+    |> post_traverse({__MODULE__, :wrap_tuple_type, []})
+  )
+
+  # Recursive definition of payload_type
+  defcombinatorp(
+    :payload_type_inner,
+    choice([
+      parsec(:tuple_inner),
+      simple_payload_type
+    ])
+  )
 
   # End terminal
   end_type =
     string("end")
     |> replace(%ST.SEnd{})
 
-  # Helper function for map
+  # Helper functions
   def wrap_list_type(type) do
     {:list, [type]}
   end
 
-  # Export parsers
+  def wrap_tuple_type(rest, args, context, _line, _offset) do
+    # Extract the types from the args (excluding parentheses and commas)
+    types =
+      args
+      |> Enum.filter(fn
+        "(" -> false
+        ")" -> false
+        "," -> false
+        _ -> true
+      end)
+
+    {rest, [{:tuple, types}], context}
+  end
+
+  # Export the parsers
+  defparsec(:payload_type, parsec(:payload_type_inner))
+  defparsec(:parse_tuple, parsec(:tuple_inner))
   defparsec(:parse_identifier, identifier)
   defparsec(:parse_basic_type, basic_payload_type)
-  defparsec(:parse_payload_type, payload_type)
   defparsec(:parse_end, end_type)
 end
