@@ -30,29 +30,27 @@ defmodule ST.Parser do
     |> ignore(string("[]"))
     |> map({__MODULE__, :wrap_list_type, []})
 
-  # Optional whitespace
+  # Whitespace parser - matches space, tab, newline
   whitespace =
     ascii_char([?\s, ?\t, ?\n, ?\r])
     |> repeat()
     |> ignore()
 
-  optional_whitespace = optional(whitespace)
-
   # Forward declare payload_type for recursion
   defcombinatorp(:payload_type_recursive, parsec(:payload_type_inner))
 
-  # Tuple type implementation
+  # Tuple type implementation with better whitespace handling
   defcombinatorp(
     :tuple_inner,
     ignore(string("("))
-    |> concat(optional_whitespace)
+    |> concat(whitespace)
     |> concat(parsec(:payload_type_recursive))
     |> repeat(
       ignore(string(","))
-      |> concat(optional_whitespace)
+      |> concat(whitespace)
       |> concat(parsec(:payload_type_recursive))
     )
-    |> concat(optional_whitespace)
+    |> concat(whitespace)
     |> ignore(string(")"))
     |> post_traverse({__MODULE__, :wrap_tuple_type, []})
   )
