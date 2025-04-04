@@ -21,3 +21,6 @@ st_parser-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Ignore the generated files from the ElixirLS extension
+.vscode/
