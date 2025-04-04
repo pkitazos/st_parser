@@ -1,4 +1,4 @@
-# StParser
+# ST Parser
 
 **TODO: Add description**
 
