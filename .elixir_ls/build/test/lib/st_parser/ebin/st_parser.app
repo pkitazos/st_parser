@@ -1,0 +1,9 @@
+{application,st_parser,
+             [{modules,['Elixir.ST','Elixir.ST.Parser','Elixir.ST.SBranch',
+                        'Elixir.ST.SEnd','Elixir.ST.SIn','Elixir.ST.SOut',
+                        'Elixir.StParser']},
+              {optional_applications,[]},
+              {applications,[kernel,stdlib,elixir,logger,nimble_parsec]},
+              {description,"st_parser"},
+              {registered,[]},
+              {vsn,"0.1.0"}]}.
