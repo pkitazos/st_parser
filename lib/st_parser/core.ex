@@ -27,6 +27,7 @@ defmodule ST.Parser.Core do
   binary_type = string("binary") |> replace(:binary)
   string_type = string("string") |> replace(:binary)
   number_type = string("number") |> replace(:number)
+  date_type = string("date") |> replace(:date)
   unit_type = string("unit") |> replace(:unit)
   boolean_type = string("boolean") |> replace(:boolean)
 
@@ -36,6 +37,7 @@ defmodule ST.Parser.Core do
       binary_type,
       string_type,
       number_type,
+      date_type,
       unit_type,
       boolean_type
     ])
