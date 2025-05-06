@@ -1,4 +1,4 @@
-# ST Parser
+# Session Type Parser
 
 A simple, lightweight, flexible parser for Session Types in Elixir.
 
