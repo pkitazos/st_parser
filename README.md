@@ -66,6 +66,30 @@ input_type = ST.input_one(:server, :ack, :unit, end_type)
 output_type = ST.output_one(:client, :request, :binary, end_type)
 ```
 
+### USing Session Type Sigils
+
+For cleaner syntax and compile-time validation, you can use the `~q` sigil to define session types directly in your code:
+
+```elixir
+import ST.Sigils
+
+# Define session types with clean, readable syntax
+auth_protocol = ~q/
+  &Server:{
+    Login((string, string)).+Client:{
+      Success(unit).end,
+      Failure(string).end
+    }
+  }
+/
+
+# Access properties directly from the compiled struct
+IO.puts("Expecting message from: #{auth_protocol.from}")
+IO.puts("First branch label: #{hd(auth_protocol.branches).label}")
+```
+
+Sigils provide the same functionality as ST.Parser.parse/1 but with compile-time parsing and validation, meaning syntax errors are caught when you compile rather than when your code runs.
+
 ### Session Type Syntax
 
 Session type expressions use a concise syntax:
