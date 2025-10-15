@@ -66,7 +66,7 @@ input_type = ST.input_one(:server, :ack, :unit, end_type)
 output_type = ST.output_one(:client, :request, :binary, end_type)
 ```
 
-### USing Session Type Sigils
+### Using Session Type Sigils
 
 For cleaner syntax and compile-time validation, you can use the `~q` sigil to define session types directly in your code:
 
