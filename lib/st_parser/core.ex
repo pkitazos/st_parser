@@ -7,7 +7,7 @@ defmodule ST.Parser.Core do
   than directly using the functions in this module.
 
   The parser handles:
-  - Basic payload types (string, number, boolean, unit)
+  - Basic payload types (string, number, boolean, nil)
   - Complex payload types (lists, tuples)
   - Session type constructs (input, output, end)
   - Branch definitions with continuations
@@ -24,16 +24,18 @@ defmodule ST.Parser.Core do
     |> map({String, :to_atom, []})
 
   # Basic types with their Elixir representations
+  atom_type = string("atom") |> replace(:atom)
   binary_type = string("binary") |> replace(:binary)
   string_type = string("string") |> replace(:binary)
   number_type = string("number") |> replace(:number)
   date_type = string("date") |> replace(:date)
-  unit_type = string("unit") |> replace(:unit)
+  unit_type = string("nil") |> replace(nil)
   boolean_type = string("boolean") |> replace(:boolean)
 
   # Basic payload type - matches one of the basic types
   basic_payload_type =
     choice([
+      atom_type,
       binary_type,
       string_type,
       number_type,
@@ -157,6 +159,7 @@ defmodule ST.Parser.Core do
     :session_type_inner,
     choice([
       end_type,
+      name_type,
       parsec(:input),
       parsec(:output)
     ])
@@ -181,11 +184,11 @@ defmodule ST.Parser.Core do
   - `type`: The element type of the list
 
   ## Returns
-  - A tuple of the form `{:list, [type]}`
+  - A tuple of the form `{:list, type}`
   """
-  @spec wrap_list_type(atom()) :: {:list, [atom()]}
+  @spec wrap_list_type(atom()) :: {:list, atom()}
   def wrap_list_type(type) do
-    {:list, [type]}
+    {:list, type}
   end
 
   @doc """

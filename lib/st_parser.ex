@@ -18,9 +18,9 @@ defmodule ST.Parser do
   ### Payload Types
 
   The following payload types are supported:
-  - Basic types: `string`, `number`, `boolean`, `unit`
+  - Basic types: `string`, `number`, `boolean`, `nil`, `atom`
   - List types: `type[]` (e.g., `string[]`, `number[]`)
-  - Tuple types: `(type1, type2, ...)` (e.g., `(string, number)`, `(boolean[], unit)`)
+  - Tuple types: `(type1, type2, ...)` (e.g., `(string, number)`, `(boolean[], nil)`)
 
   ### Example Session Type
 
@@ -83,13 +83,13 @@ defmodule ST.Parser do
 
   ## Examples
 
-      iex> ST.Parser.parse("&Server:{ Ack(unit).end }")
+      iex> ST.Parser.parse("&Server:{ Ack(nil).end }")
       {:ok, %ST.SIn{
         from: :server,
         branches: [
           %ST.SBranch{
             label: :ack,
-            payload: :unit,
+            payload: nil,
             continue_as: %ST.SEnd{}
           }
         ]
@@ -167,7 +167,7 @@ defmodule ST.Parser do
       {:ok, :binary}
 
       iex> ST.Parser.parse_type("boolean[]")
-      {:ok, {:list, [:boolean]}}
+      {:ok, {:list, :boolean}}
 
       iex> ST.Parser.parse_type("(string, number)")
       {:ok, {:tuple, [:binary, :number]}}

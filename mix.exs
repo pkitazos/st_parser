@@ -1,8 +1,8 @@
 defmodule ST.Parser.MixProject do
   use Mix.Project
 
-  @version "0.4.1"
-  @source_url "https://github.com/pkitazos/st-parser"
+  @version "0.5.0"
+  @source_url "https://github.com/pkitazos/st_parser"
 
   def project do
     [

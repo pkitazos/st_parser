@@ -14,11 +14,11 @@ defmodule ST.ParserTest do
                 branches: [
                   %ST.SBranch{
                     label: :ack,
-                    payload: :unit,
+                    payload: nil,
                     continue_as: %ST.SEnd{}
                   }
                 ]
-              }} = ST.Parser.parse("&Server:{ Ack(unit).end }")
+              }} = ST.Parser.parse("&Server:{ Ack(nil).end }")
     end
 
     test "parses input type with multiple branches" do
@@ -28,7 +28,7 @@ defmodule ST.ParserTest do
                 branches: [
                   %ST.SBranch{
                     label: :ack,
-                    payload: :unit,
+                    payload: nil,
                     continue_as: %ST.SEnd{}
                   },
                   %ST.SBranch{
@@ -37,7 +37,7 @@ defmodule ST.ParserTest do
                     continue_as: %ST.SEnd{}
                   }
                 ]
-              }} = ST.Parser.parse("&Server:{ Error(string).end, Ack(unit).end }")
+              }} = ST.Parser.parse("&Server:{ Error(string).end, Ack(nil).end }")
     end
 
     test "parses output type with single branch" do
@@ -61,7 +61,7 @@ defmodule ST.ParserTest do
                 branches: [
                   %ST.SBranch{
                     label: :data,
-                    payload: {:tuple, [:binary, {:list, [:boolean]}]},
+                    payload: {:tuple, [:binary, {:list, :boolean}]},
                     continue_as: %ST.SEnd{}
                   }
                 ]
@@ -113,7 +113,7 @@ defmodule ST.ParserTest do
         Request(string).&Server:{
           Error(string).end,
           Success((number, string[])).+Client:{
-            Acknowledge(unit).end
+            Acknowledge(nil).end
           }
         }
       }
@@ -131,13 +131,13 @@ defmodule ST.ParserTest do
                       branches: [
                         %ST.SBranch{
                           label: :success,
-                          payload: {:tuple, [:number, {:list, [:binary]}]},
+                          payload: {:tuple, [:number, {:list, :binary}]},
                           continue_as: %ST.SOut{
                             to: :client,
                             branches: [
                               %ST.SBranch{
                                 label: :acknowledge,
-                                payload: :unit,
+                                payload: nil,
                                 continue_as: %ST.SEnd{}
                               }
                             ]
@@ -160,16 +160,16 @@ defmodule ST.ParserTest do
       chat_protocol = """
       +Client:{
         Message(string).&Server:{
-          Received(unit).+Client:{
-            Continue(unit).&Server:{
-              Ready(unit).+Client:{
+          Received(nil).+Client:{
+            Continue(nil).&Server:{
+              Ready(nil).+Client:{
                 Message(string).&Server:{
-                  Received(unit).end
+                  Received(nil).end
                 }
               },
-              Busy(unit).end
+              Busy(nil).end
             },
-            Quit(unit).end
+            Quit(nil).end
           }
         }
       }
@@ -237,8 +237,8 @@ defmodule ST.ParserTest do
   end
 
   describe "ST.Parser.parse with named handlers" do
-    test "returns error for non-continuation handler reference" do
-      assert {:error, _} = ST.Parser.parse("quote_handler")
+    test "parses standalone handler reference" do
+      assert {:ok, %ST.SName{handler: :quote_handler}} = ST.Parser.parse("quote_handler")
     end
 
     test "parses session types with named handler continuations" do
@@ -275,7 +275,7 @@ defmodule ST.ParserTest do
     test "handles complex protocol with named handlers" do
       # Test a protocol that includes both end and named handlers
       protocol =
-        "+Client:{ Login(string).&Server:{ Success(unit).process_login, Error(string).end } }"
+        "+Client:{ Login(string).&Server:{ Success(nil).process_login, Error(string).end } }"
 
       {:ok, parsed} = ST.Parser.parse(protocol)
 
@@ -300,15 +300,15 @@ defmodule ST.ParserTest do
                branches: [
                  %ST.SBranch{
                    label: :ack,
-                   payload: :unit,
+                   payload: nil,
                    continue_as: %ST.SEnd{}
                  }
                ]
-             } = ST.Parser.parse!("&Server:{ Ack(unit).end }")
+             } = ST.Parser.parse!("&Server:{ Ack(nil).end }")
     end
 
     test "raises exception on failure" do
-      assert_raise RuntimeError, fn -> ST.Parser.parse!("invalid") end
+      assert_raise RuntimeError, fn -> ST.Parser.parse!("invalid!") end
       assert_raise RuntimeError, fn -> ST.Parser.parse!("&Server:{ Ack.end }") end
     end
   end
@@ -317,35 +317,35 @@ defmodule ST.ParserTest do
     test "parses basic types" do
       assert {:ok, :binary} = ST.Parser.parse_type("string")
       assert {:ok, :number} = ST.Parser.parse_type("number")
-      assert {:ok, :unit} = ST.Parser.parse_type("unit")
+      assert {:ok, nil} = ST.Parser.parse_type("nil")
       assert {:ok, :boolean} = ST.Parser.parse_type("boolean")
     end
 
     test "parses list types" do
-      assert {:ok, {:list, [:binary]}} = ST.Parser.parse_type("string[]")
-      assert {:ok, {:list, [:number]}} = ST.Parser.parse_type("number[]")
-      assert {:ok, {:list, [:boolean]}} = ST.Parser.parse_type("boolean[]")
+      assert {:ok, {:list, :binary}} = ST.Parser.parse_type("string[]")
+      assert {:ok, {:list, :number}} = ST.Parser.parse_type("number[]")
+      assert {:ok, {:list, :boolean}} = ST.Parser.parse_type("boolean[]")
     end
 
     test "parses tuple types" do
       assert {:ok, {:tuple, [:binary, :number]}} = ST.Parser.parse_type("(string, number)")
 
-      assert {:ok, {:tuple, [:binary, {:list, [:boolean]}]}} =
+      assert {:ok, {:tuple, [:binary, {:list, :boolean}]}} =
                ST.Parser.parse_type("(string, boolean[])")
 
-      assert {:ok, {:tuple, [:unit]}} = ST.Parser.parse_type("(unit)")
+      assert {:ok, {:tuple, [nil]}} = ST.Parser.parse_type("(nil)")
     end
 
     test "parses nested tuple types" do
       assert {:ok, {:tuple, [:binary, {:tuple, [:number, :boolean]}]}} =
                ST.Parser.parse_type("(string, (number, boolean))")
 
-      assert {:ok, {:tuple, [:binary, {:tuple, [:number, {:tuple, [:boolean, :unit]}]}]}} =
-               ST.Parser.parse_type("(string, (number, (boolean, unit)))")
+      assert {:ok, {:tuple, [:binary, {:tuple, [:number, {:tuple, [:boolean, nil]}]}]}} =
+               ST.Parser.parse_type("(string, (number, (boolean, nil)))")
     end
 
     test "parses tuples with mixed types" do
-      assert {:ok, {:tuple, [:binary, {:list, [:number]}, :boolean]}} =
+      assert {:ok, {:tuple, [:binary, {:list, :number}, :boolean]}} =
                ST.Parser.parse_type("(string, number[], boolean)")
     end
 
@@ -366,7 +366,7 @@ defmodule ST.ParserTest do
   describe "ST.Parser.parse_type!" do
     test "returns parsed type directly on success" do
       assert :binary = ST.Parser.parse_type!("string")
-      assert {:list, [:boolean]} = ST.Parser.parse_type!("boolean[]")
+      assert {:list, :boolean} = ST.Parser.parse_type!("boolean[]")
       assert {:tuple, [:binary, :number]} = ST.Parser.parse_type!("(string, number)")
     end
 
@@ -380,8 +380,8 @@ defmodule ST.ParserTest do
     test "parses ping-pong protocol" do
       ping_pong = """
       +Ping:{
-        Ping(unit).&Pong:{
-          Pong(unit).end
+        Ping(nil).&Pong:{
+          Pong(nil).end
         }
       }
       """
@@ -392,13 +392,13 @@ defmodule ST.ParserTest do
                 branches: [
                   %ST.SBranch{
                     label: :ping,
-                    payload: :unit,
+                    payload: nil,
                     continue_as: %ST.SIn{
                       from: :pong,
                       branches: [
                         %ST.SBranch{
                           label: :pong,
-                          payload: :unit,
+                          payload: nil,
                           continue_as: %ST.SEnd{}
                         }
                       ]
@@ -412,7 +412,7 @@ defmodule ST.ParserTest do
       auth_protocol = """
       +Client:{
         Login((string, string)).&Server:{
-          Success(unit).+Client:{
+          Success(nil).+Client:{
             Request(string).&Server:{
               Response(string).end
             }
@@ -435,12 +435,12 @@ defmodule ST.ParserTest do
       transfer_protocol = """
       +Sender:{
         Begin(string).&Receiver:{
-          Ready(unit).+Sender:{
+          Ready(nil).+Sender:{
             Data(string[]).&Receiver:{
-              Ack(unit).+Sender:{
-                Complete(unit).end,
+              Ack(nil).+Sender:{
+                Complete(nil).end,
                 More(string[]).&Receiver:{
-                  Ack(unit).end
+                  Ack(nil).end
                 }
               }
             }
@@ -465,7 +465,7 @@ defmodule ST.ParserTest do
 
     test "parses input type" do
       assert {:ok, [%ST.SIn{}], _, _, _, _} =
-               ST.Parser.Core.parse_session_type("&Server:{ Ack(unit).end }")
+               ST.Parser.Core.parse_session_type("&Server:{ Ack(nil).end }")
     end
 
     test "parses output type" do
@@ -491,7 +491,7 @@ defmodule ST.ParserTest do
               [
                 %ST.SBranch{
                   label: :data,
-                  payload: {:tuple, [:binary, {:list, [:boolean]}]},
+                  payload: {:tuple, [:binary, {:list, :boolean}]},
                   continue_as: %ST.SEnd{}
                 }
               ], "", _, _, _} = ST.Parser.Core.parse_branch("Data((string, boolean[])).end")
@@ -514,8 +514,7 @@ defmodule ST.ParserTest do
                     ]
                   }
                 }
-              ], "", _, _,
-              _} =
+              ], "", _, _, _} =
                ST.Parser.Core.parse_branch("Request(string).+Client:{ Response(number).end }")
     end
   end
@@ -529,12 +528,12 @@ defmodule ST.ParserTest do
                   branches: [
                     %ST.SBranch{
                       label: :ack,
-                      payload: :unit,
+                      payload: nil,
                       continue_as: %ST.SEnd{}
                     }
                   ]
                 }
-              ], "", _, _, _} = ST.Parser.Core.parse_input("&Server:{ Ack(unit).end }")
+              ], "", _, _, _} = ST.Parser.Core.parse_input("&Server:{ Ack(nil).end }")
     end
 
     test "parses an input with multiple branches" do
@@ -545,7 +544,7 @@ defmodule ST.ParserTest do
                   branches: [
                     %ST.SBranch{
                       label: :ack,
-                      payload: :unit,
+                      payload: nil,
                       continue_as: %ST.SEnd{}
                     },
                     %ST.SBranch{
@@ -555,8 +554,8 @@ defmodule ST.ParserTest do
                     }
                   ]
                 }
-              ], "", _, _,
-              _} = ST.Parser.Core.parse_input("&Server:{ Error(string).end, Ack(unit).end }")
+              ], "", _, _, _} =
+               ST.Parser.Core.parse_input("&Server:{ Error(string).end, Ack(nil).end }")
     end
   end
 
@@ -585,13 +584,13 @@ defmodule ST.ParserTest do
                   branches: [
                     %ST.SBranch{
                       label: :data,
-                      payload: {:tuple, [:binary, {:list, [:boolean]}]},
+                      payload: {:tuple, [:binary, {:list, :boolean}]},
                       continue_as: %ST.SEnd{}
                     }
                   ]
                 }
-              ], "", _, _,
-              _} = ST.Parser.Core.parse_output("+Peer:{ Data((string, boolean[])).end }")
+              ], "", _, _, _} =
+               ST.Parser.Core.parse_output("+Peer:{ Data((string, boolean[])).end }")
     end
   end
 
@@ -599,14 +598,14 @@ defmodule ST.ParserTest do
     test "parses basic types" do
       assert {:ok, [:binary], "", _, _, _} = ST.Parser.Core.payload_type("string")
       assert {:ok, [:number], "", _, _, _} = ST.Parser.Core.payload_type("number")
-      assert {:ok, [:unit], "", _, _, _} = ST.Parser.Core.payload_type("unit")
+      assert {:ok, [nil], "", _, _, _} = ST.Parser.Core.payload_type("nil")
       assert {:ok, [:boolean], "", _, _, _} = ST.Parser.Core.payload_type("boolean")
     end
 
     test "parses list types" do
-      assert {:ok, [{:list, [:binary]}], "", _, _, _} = ST.Parser.Core.payload_type("string[]")
-      assert {:ok, [{:list, [:number]}], "", _, _, _} = ST.Parser.Core.payload_type("number[]")
-      assert {:ok, [{:list, [:boolean]}], "", _, _, _} = ST.Parser.Core.payload_type("boolean[]")
+      assert {:ok, [{:list, :binary}], "", _, _, _} = ST.Parser.Core.payload_type("string[]")
+      assert {:ok, [{:list, :number}], "", _, _, _} = ST.Parser.Core.payload_type("number[]")
+      assert {:ok, [{:list, :boolean}], "", _, _, _} = ST.Parser.Core.payload_type("boolean[]")
     end
 
     test "parses tuple types" do
@@ -622,13 +621,13 @@ defmodule ST.ParserTest do
     end
 
     test "recognises tuple with list elements" do
-      assert {:ok, [{:tuple, [:binary, {:list, [:boolean]}]}], "", _, _, _} =
+      assert {:ok, [{:tuple, [:binary, {:list, :boolean}]}], "", _, _, _} =
                ST.Parser.Core.parse_tuple("(string, boolean[])")
     end
 
     test "recognises single element tuples" do
-      assert {:ok, [{:tuple, [:unit]}], "", _, _, _} =
-               ST.Parser.Core.parse_tuple("(unit)")
+      assert {:ok, [{:tuple, [nil]}], "", _, _, _} =
+               ST.Parser.Core.parse_tuple("(nil)")
     end
 
     test "recognises nested tuples" do

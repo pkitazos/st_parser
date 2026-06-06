@@ -13,8 +13,8 @@ defmodule ST.SigilTest do
     end
 
     test "creates SIn struct from input expression" do
-      sigil_result = ~q/&Server:{ Ack(unit).end }/
-      {:ok, parser_result} = ST.Parser.parse("&Server:{ Ack(unit).end }")
+      sigil_result = ~q/&Server:{ Ack(nil).end }/
+      {:ok, parser_result} = ST.Parser.parse("&Server:{ Ack(nil).end }")
 
       assert sigil_result == parser_result
 
@@ -23,7 +23,7 @@ defmodule ST.SigilTest do
                branches: [
                  %ST.SBranch{
                    label: :ack,
-                   payload: :unit,
+                   payload: nil,
                    continue_as: %ST.SEnd{}
                  }
                ]
@@ -59,7 +59,7 @@ defmodule ST.SigilTest do
                branches: [
                  %ST.SBranch{
                    label: :data,
-                   payload: {:tuple, [:binary, {:list, [:boolean]}]},
+                   payload: {:tuple, [:binary, {:list, :boolean}]},
                    continue_as: %ST.SEnd{}
                  }
                ]
@@ -157,12 +157,12 @@ defmodule ST.SigilTest do
     end
 
     test "works with different delimiter styles" do
-      protocol_string = "&Server:{ Ack(unit).end }"
+      protocol_string = "&Server:{ Ack(nil).end }"
 
-      result_slashes = ~q/&Server:{ Ack(unit).end }/
-      result_brackets = ~q[&Server:{ Ack(unit).end }]
-      result_pipes = ~q|&Server:{ Ack(unit).end }|
-      result_quotes = ~q"&Server:{ Ack(unit).end }"
+      result_slashes = ~q/&Server:{ Ack(nil).end }/
+      result_brackets = ~q[&Server:{ Ack(nil).end }]
+      result_pipes = ~q|&Server:{ Ack(nil).end }|
+      result_quotes = ~q"&Server:{ Ack(nil).end }"
 
       assert result_slashes == result_brackets
       assert result_brackets == result_pipes
@@ -177,11 +177,11 @@ defmodule ST.SigilTest do
         import ST.Sigils
 
         def get_ping_pong do
-          ~q/+Ping:{ ping(unit).&Pong:{ pong(unit).end } }/
+          ~q/+Ping:{ ping(nil).&Pong:{ pong(nil).end } }/
         end
 
         def get_auth_protocol do
-          ~q/&Server:{ login((string, string)).+Client:{ success(unit).end } }/
+          ~q/&Server:{ login((string, string)).+Client:{ success(nil).end } }/
         end
       end
 
@@ -196,8 +196,8 @@ defmodule ST.SigilTest do
       defmodule TestConstants do
         import ST.Sigils
 
-        @ping_protocol ~q/+Ping:{ ping(unit).end }/
-        @pong_protocol ~q/&Pong:{ pong(unit).end }/
+        @ping_protocol ~q/+Ping:{ ping(nil).end }/
+        @pong_protocol ~q/&Pong:{ pong(nil).end }/
 
         def ping_protocol, do: @ping_protocol
         def pong_protocol, do: @pong_protocol
@@ -210,7 +210,7 @@ defmodule ST.SigilTest do
     test "demonstrates zero runtime parsing overhead" do
       # This test shows that the sigil result is a pre-built struct,
       # not a function call that parses at runtime
-      protocol = ~q/&Server:{ Ack(unit).end }/
+      protocol = ~q/&Server:{ Ack(nil).end }/
 
       # The sigil should have produced a complete struct at compile time
       assert %ST.SIn{} = protocol
@@ -233,7 +233,7 @@ defmodule ST.SigilTest do
       auth_sigil = ~q/
         +Client:{
           login((string, string)).&Server:{
-            success(unit).authenticated_session,
+            success(nil).authenticated_session,
             failure(string).end
           }
         }
@@ -242,7 +242,7 @@ defmodule ST.SigilTest do
       auth_string = """
       +Client:{
         login((string, string)).&Server:{
-          success(unit).authenticated_session,
+          success(nil).authenticated_session,
           failure(string).end
         }
       }
@@ -254,9 +254,9 @@ defmodule ST.SigilTest do
       transfer_sigil = ~q/
         +Sender:{
           begin(string).&Receiver:{
-            ready(unit).+Sender:{
+            ready(nil).+Sender:{
               data(string[]).&Receiver:{
-                ack(unit).end
+                ack(nil).end
               }
             },
             reject(string).end
@@ -267,9 +267,9 @@ defmodule ST.SigilTest do
       transfer_string = """
       +Sender:{
         begin(string).&Receiver:{
-          ready(unit).+Sender:{
+          ready(nil).+Sender:{
             data(string[]).&Receiver:{
-              ack(unit).end
+              ack(nil).end
             }
           },
           reject(string).end

@@ -21,7 +21,7 @@ defmodule ST.Sigils do
       session = ~q/end/
 
       # Input session type
-      session = ~q/&Server:{ Ack(unit).end }/
+      session = ~q/&Server:{ Ack(nil).end }/
 
       # Output session type
       session = ~q/+Client:{ Request(string).end }/

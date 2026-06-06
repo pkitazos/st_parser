@@ -28,7 +28,7 @@ Add `st_parser` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:st_parser, "~> 0.4.1"}
+    {:st_parser, "~> 0.5.0"}
   ]
 end
 ```
@@ -39,10 +39,10 @@ end
 
 ```elixir
 # Parse a session type string into a structured type
-{:ok, session_type} = ST.Parser.parse("&Server:{ Ack(unit).end }")
+{:ok, session_type} = ST.Parser.parse("&Server:{ Ack(nil).end }")
 
 # Or use the bang version which raises on error
-session_type = ST.Parser.parse!("&Server:{ Ack(unit).end }")
+session_type = ST.Parser.parse!("&Server:{ Ack(nil).end }")
 
 # Parse just a payload type
 {:ok, payload_type} = ST.Parser.parse_type("(string, boolean[])")
@@ -55,12 +55,12 @@ session_type = ST.Parser.parse!("&Server:{ Ack(unit).end }")
 end_type = ST.end_session()
 
 # Create a simple branch
-ack_branch = ST.branch(:ack, :unit, end_type)
+ack_branch = ST.branch(:ack, nil, end_type)
 
 # Create an input type (receiving a message)
 input_type = ST.input(:server, [ack_branch])
 # Or more concisely:
-input_type = ST.input_one(:server, :ack, :unit, end_type)
+input_type = ST.input_one(:server, :ack, nil, end_type)
 
 # Create an output type (sending a message)
 output_type = ST.output_one(:client, :request, :binary, end_type)
@@ -77,7 +77,7 @@ import ST.Sigils
 auth_protocol = ~q/
   &Server:{
     Login((string, string)).+Client:{
-      Success(unit).end,
+      Success(nil).end,
       Failure(string).end
     }
   }
@@ -107,7 +107,7 @@ end
 
 Payload types can be:
 
-- Basic types: `string`, `number`, `boolean`, `unit`
+- Basic types: `atom`, `string`, `number`, `boolean`, `nil`
 - List types: `type[]` (e.g., `string[]`)
 - Tuple types: `(type1, type2, ...)` (e.g., `(string, number[])`)
 
@@ -139,4 +139,3 @@ Full documentation is available via ExDoc:
 ```
 mix docs
 ```
-

@@ -21,6 +21,7 @@ st_parser-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+/_tmp/
 
 # Ignore the generated files from the ElixirLS extension
 .elixir_ls/
